@@ -4,15 +4,43 @@
     android:layout_height="fill_parent"
     android:orientation="vertical">
 
-
-    <ListView
-        android:id="@+id/job_stop_list"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
-
-    <com.github.mikephil.charting.charts.PieChart
-        android:id="@+id/chart"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:padding="10dp"
+        android:layout_height="match_parent">
 
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+
+            <com.github.mikephil.charting.charts.PieChart
+                android:id="@+id/chart"
+                android:layout_width="match_parent"
+                android:layout_height="300dp" />
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Frequent" />
+
+            <ListView
+                android:id="@+id/statistics1"
+                android:layout_width="wrap_content"
+                android:layout_height="250dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Overall time" />
+
+            <ListView
+                android:id="@+id/statistics2"
+                android:layout_width="wrap_content"
+                android:layout_height="250dp" />
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>

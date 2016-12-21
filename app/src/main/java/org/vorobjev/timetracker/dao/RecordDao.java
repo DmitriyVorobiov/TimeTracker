@@ -1,6 +1,7 @@
 package org.vorobjev.timetracker.dao;
 
 import com.j256.ormlite.dao.BaseDaoImpl;
+import com.j256.ormlite.stmt.SelectArg;
 import com.j256.ormlite.support.ConnectionSource;
 
 import org.vorobjev.timetracker.entity.RecordEntity;
@@ -26,6 +27,10 @@ public class RecordDao extends BaseDaoImpl<RecordEntity, Integer> {
                 return null;
             }
         });
+    }
+
+    public List<RecordEntity> findRecord(int id) throws SQLException {
+        return queryBuilder().where().eq("id", new SelectArg(id)).query();
     }
 
 }

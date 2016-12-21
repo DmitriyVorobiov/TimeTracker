@@ -51,7 +51,9 @@ public class TimeTrackerApplication extends Application {
             cats.add(cat3);
             cats.add(cat4);
             cats.add(cat5);
-            dbHelper.<CategoryDao, CategoryEntity>getDao(CategoryEntity.class).update(cats);
+            if (dbHelper.<CategoryDao, CategoryEntity>getDao(CategoryEntity.class).getCategories().isEmpty()) {
+                dbHelper.<CategoryDao, CategoryEntity>getDao(CategoryEntity.class).update(cats);
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }

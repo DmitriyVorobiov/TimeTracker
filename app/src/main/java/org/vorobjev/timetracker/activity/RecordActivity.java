@@ -17,6 +17,7 @@ import org.vorobjev.timetracker.entity.RecordEntity;
 import org.vorobjev.timetracker.fragments.RecordFragment;
 
 import java.sql.SQLException;
+import java.util.Date;
 
 public class RecordActivity extends Activity {
 
@@ -31,7 +32,13 @@ public class RecordActivity extends Activity {
         dbHelper = TimeTrackerApplication.getInstance().getDbHelper();
         if (savedInstanceState == null) {
             recordFragment = new RecordFragment();
+            int recordId = getIntent().getStringExtra(RecordsActivity.RECORD_ID) != null ? Integer.valueOf(getIntent().getStringExtra(RecordsActivity.RECORD_ID)) : -1;
+            if (recordId >= 0) {
+                recordFragment.setRecordId(recordId);
+            }
             getFragmentManager().beginTransaction().add(R.id.record_container, recordFragment).commit();
+        } else {
+            recordFragment = (RecordFragment)getFragmentManager().findFragmentById(R.id.record_container);
         }
     }
 

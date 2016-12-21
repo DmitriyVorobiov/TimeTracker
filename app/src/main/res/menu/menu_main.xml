@@ -9,5 +9,11 @@
         android:title="Add"
         tools:ignore="AppCompatResource" />
 
+    <item
+        android:id="@+id/action_history"
+        android:icon="@drawable/ic_history_black_36dp"
+        android:showAsAction="ifRoom"
+        android:title="History"
+        tools:ignore="AppCompatResource" />
 
 </menu>

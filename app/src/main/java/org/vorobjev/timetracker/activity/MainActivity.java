@@ -6,6 +6,8 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.data.PieData;
@@ -24,7 +26,11 @@ import org.vorobjev.timetracker.entity.RecordEntity;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.PriorityQueue;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -33,7 +39,10 @@ public class MainActivity extends Activity {
 
     @Bind(R.id.chart)
     PieChart mChart;
-
+    @Bind(R.id.statistics1)
+    ListView statListView1;
+    @Bind(R.id.statistics2)
+    ListView statListView2;
     TimeTrackerDatabaseHelper dbHelper;
 
     @Override
@@ -42,8 +51,6 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         dbHelper = TimeTrackerApplication.getInstance().getDbHelper();
-
-
         mChart.setUsePercentValues(true);
         mChart.getDescription().setEnabled(false);
         mChart.setDragDecelerationFrictionCoef(0.95f);
@@ -55,13 +62,73 @@ public class MainActivity extends Activity {
         mChart.setTransparentCircleRadius(44f);
         mChart.setRotationAngle(0);
         mChart.setRotationEnabled(true);
-
-        setData(4, 100);
+        setData();
     }
 
-    private void setData(int count, float range) {
+    protected void onResume() {
+        super.onResume();
+        fillFrequentStatisticsView();
+        fillOverallStatisticsView();
+    }
+
+    void fillOverallStatisticsView() {
+        List<CategoryEntity> categoryEntities = null;
+        List<RecordEntity> records = null;
+        try {
+            categoryEntities = TimeTrackerApplication.getInstance().getDbHelper().<CategoryDao, CategoryEntity>getDao(CategoryEntity.class).getCategories();
+            records = TimeTrackerApplication.getInstance().getDbHelper().<RecordDao, RecordEntity>getDao(RecordEntity.class).getRecords();
+        } catch (SQLException e) {
+        }
+        ArrayList<String> entries = new ArrayList<String>();
+        for (CategoryEntity cE : categoryEntities) {
+            long count = 0;
+            for (RecordEntity recordEntity : records) {
+                if (recordEntity.getCategoryEntity().getName().equals(cE.getName())) {
+                    count += recordEntity.getDuration();
+                }
+            }
+            entries.add(cE.getName() + ": " + count);
+        }
+        String[] items = entries.toArray(new String[entries.size()]);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1, items);
+        statListView2.setAdapter(adapter);
+    }
+
+    void fillFrequentStatisticsView() {
+        List<CategoryEntity> categoryEntities = null;
+        List<RecordEntity> records = null;
+        try {
+            categoryEntities = TimeTrackerApplication.getInstance().getDbHelper().<CategoryDao, CategoryEntity>getDao(CategoryEntity.class).getCategories();
+            records = TimeTrackerApplication.getInstance().getDbHelper().<RecordDao, RecordEntity>getDao(RecordEntity.class).getRecords();
+        } catch (SQLException e) {
+        }
+        ArrayList<String> entries = new ArrayList<String>();
+        for (CategoryEntity cE : categoryEntities) {
+            long count = 0;
+            for (RecordEntity recordEntity : records) {
+                if (recordEntity.getCategoryEntity().getName().equals(cE.getName())) {
+                    count += 1;
+                }
+            }
+            entries.add(cE.getName() + ": " + count);
+        }
+        String[] items = entries.toArray(new String[entries.size()]);
+        Arrays.sort(items, new Comparator<String>() {
+            public int compare(String str1, String str2) {
+                String substr1 = str1.split(" ")[1];
+                String substr2 = str2.split(" ")[1];
+                return Integer.valueOf(substr2).compareTo(Integer.valueOf(substr1));
+            }
+        });
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1, items);
+        statListView1.setAdapter(adapter);
+    }
+
+    private void setData() {
         ArrayList<PieEntry> entries = categoriesTimes();
-        PieDataSet dataSet = new PieDataSet(entries, "Election Results");
+        PieDataSet dataSet = new PieDataSet(entries, "");
         dataSet.setSliceSpace(3f);
         dataSet.setSelectionShift(5f);
         ArrayList<Integer> colors = new ArrayList<Integer>();
@@ -95,6 +162,8 @@ public class MainActivity extends Activity {
         int id = item.getItemId();
         if (id == R.id.action_add) {
             startActivity(new Intent(this, RecordActivity.class));
+        } else if (id == R.id.action_history) {
+            startActivity(new Intent(this, RecordsActivity.class));
         }
         return super.onOptionsItemSelected(item);
     }
@@ -115,7 +184,9 @@ public class MainActivity extends Activity {
                     time += recordEntity.getDuration();
                 }
             }
-            entries.add(new PieEntry(time, cE.getName()));
+            if (time > 0) {
+                entries.add(new PieEntry(time, cE.getName()));
+            }
         }
         return entries;
     }

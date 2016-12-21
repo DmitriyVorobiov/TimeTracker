@@ -18,6 +18,7 @@ import org.vorobjev.timetracker.R;
 import org.vorobjev.timetracker.TimeTrackerApplication;
 import org.vorobjev.timetracker.dao.CategoryDao;
 import org.vorobjev.timetracker.dao.PhotoDao;
+import org.vorobjev.timetracker.dao.RecordDao;
 import org.vorobjev.timetracker.db.TimeTrackerDatabaseHelper;
 import org.vorobjev.timetracker.entity.CategoryEntity;
 import org.vorobjev.timetracker.entity.PhotoEntity;
@@ -28,7 +29,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -37,6 +41,8 @@ import butterknife.OnClick;
 public class RecordFragment extends Fragment implements TimePickerFragment.OnFragmentInteractionListener, CategoryChooserDialog.OnCategoryChoosedListener {
 
     private final String TEMP_FILE_NAME = "temp";
+    public static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm", Locale.UK);
+    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy", Locale.UK);
 
     @Bind(R.id.photoFrame)
     public ImageView photoFrame;
@@ -50,6 +56,7 @@ public class RecordFragment extends Fragment implements TimePickerFragment.OnFra
     public TextView categoryView;
     public File tempPhotoFile;
     public Bitmap photo;
+    public int recordId;
     RecordEntity record;
     TimeTrackerDatabaseHelper dbHelper;
 
@@ -82,6 +89,10 @@ public class RecordFragment extends Fragment implements TimePickerFragment.OnFra
         photoFrame.setVisibility(ImageView.VISIBLE);
     }
 
+    public void setRecordId(int id) {
+        recordId = id;
+    }
+
     private Bitmap decodeScaledImage(File file) {
         DisplayMetrics metrics = new DisplayMetrics();
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -101,16 +112,13 @@ public class RecordFragment extends Fragment implements TimePickerFragment.OnFra
 
     public RecordEntity provideRecordEntity() {
         record.setDescription(descriptionView.getText().toString());
-        record.setDuration((record.getTimeEnd() - record.getTimeStart()) / 1000 * 60);
+        record.setDuration((record.getTimeEnd() - record.getTimeStart()) / (1000 * 60));
         if (photo != null) {
             PhotoEntity photoEntity = new PhotoEntity();
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             photo.compress(Bitmap.CompressFormat.JPEG, 50, stream);
             byte[] byteArray = stream.toByteArray();
             try {
-//                BufferedInputStream buf = new BufferedInputStream(new FileInputStream(tempPhotoFile));
-//                buf.read(bytes, 0, bytes.length);
-//                buf.close();
                 photoEntity.setImageBytes(byteArray);
                 dbHelper.<PhotoDao, PhotoEntity>getDao(PhotoEntity.class).add(photoEntity);
             } catch (Exception e) {
@@ -136,9 +144,18 @@ public class RecordFragment extends Fragment implements TimePickerFragment.OnFra
         setRetainInstance(true);
         dbHelper = TimeTrackerApplication.getInstance().getDbHelper();
         tempPhotoFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), TEMP_FILE_NAME);
-        record = new RecordEntity();
-        record.setTimeStart(System.currentTimeMillis());
-        record.setTimeEnd(System.currentTimeMillis());
+        if (recordId > 0) {
+            try {
+                record = dbHelper.<RecordDao, RecordEntity>getDao(RecordEntity.class).findRecord(recordId).get(0);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        if (record == null) {
+            record = new RecordEntity();
+            record.setTimeStart(System.currentTimeMillis());
+            record.setTimeEnd(System.currentTimeMillis());
+        }
     }
 
     @Override
@@ -146,26 +163,41 @@ public class RecordFragment extends Fragment implements TimePickerFragment.OnFra
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_record, container, false);
         ButterKnife.bind(this, view);
+        fillControls();
         return view;
 
     }
 
+    private void fillControls() {
+        categoryView.setText(record.getCategoryEntity() != null ? record.getCategoryEntity().getName() : "Select category");
+        endTimeView.setText(TIME_FORMAT.format(new Date(record.getTimeEnd())));
+        startTimeView.setText(TIME_FORMAT.format(new Date(record.getTimeStart())));
+        descriptionView.setText(record.getDescription() != null ? record.getDescription() : "");
+
+        if (record.getPhotoEntity() != null) {
+            byte[] bytes = record.getPhotoEntity().getImageBytes();
+            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            photoFrame.setImageBitmap(bitmap);
+            photoFrame.setVisibility(ImageView.VISIBLE);
+        }
+    }
+
     @Override
     public void onSelectStartTime(int hourOfDay, int minute) {
-        startTimeView.setText(hourOfDay + " : " + minute);
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
         calendar.set(Calendar.MINUTE, minute);
         record.setTimeStart(calendar.getTimeInMillis());
+        fillControls();
     }
 
     @Override
     public void onSelectEndTime(int hourOfDay, int minute) {
-        endTimeView.setText(hourOfDay + " : " + minute);
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
         calendar.set(Calendar.MINUTE, minute);
         record.setTimeEnd(calendar.getTimeInMillis());
+        fillControls();
     }
 
     @Override
@@ -173,7 +205,7 @@ public class RecordFragment extends Fragment implements TimePickerFragment.OnFra
         categoryView.setText(category);
         try {
             record.setCategoryEntity(TimeTrackerApplication.getInstance().getDbHelper().<CategoryDao, CategoryEntity>getDao(CategoryEntity.class).findCategory(category).get(0));
-        } catch (SQLException e){
+        } catch (SQLException e) {
 
         }
     }
