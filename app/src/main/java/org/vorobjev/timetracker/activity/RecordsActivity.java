@@ -42,13 +42,6 @@ public class RecordsActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_records);
         ButterKnife.bind(this);
-//        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View v, int position,
-//                                    long arg3) {
-//                startActivity(new Intent(RecordsActivity.this, RecordActivity.class).putExtra(RECORD_ID, ((String) parent.getItemAtPosition(position)).split(" ")[1]));
-//            }
-//        });
         dbHelper = TimeTrackerApplication.getInstance().getDbHelper();
     }
 

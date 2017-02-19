@@ -63,6 +63,9 @@ public class RecordActivity extends Activity {
             finish();
         } else if (id == R.id.action_photo) {
             takePhoto();
+        } else if (id == R.id.action_delete) {
+            recordFragment.deleteRecord();
+            finish();
         }
         return super.onOptionsItemSelected(item);
     }

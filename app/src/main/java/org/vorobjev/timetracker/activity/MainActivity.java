@@ -67,6 +67,7 @@ public class MainActivity extends Activity {
 
     protected void onResume() {
         super.onResume();
+        setData();
         fillFrequentStatisticsView();
         fillOverallStatisticsView();
     }

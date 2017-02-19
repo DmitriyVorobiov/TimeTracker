@@ -7,6 +7,7 @@ import com.j256.ormlite.support.ConnectionSource;
 import org.vorobjev.timetracker.entity.RecordEntity;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -33,4 +34,12 @@ public class RecordDao extends BaseDaoImpl<RecordEntity, Integer> {
         return queryBuilder().where().eq("id", new SelectArg(id)).query();
     }
 
+    public void remove(final RecordEntity category) throws SQLException {
+        callBatchTasks(new Callable<RecordEntity>() {
+            public RecordEntity call() throws Exception {
+                delete(category);
+                return null;
+            }
+        });
+    }
 }

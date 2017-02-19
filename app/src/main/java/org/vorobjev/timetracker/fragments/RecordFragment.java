@@ -60,6 +60,14 @@ public class RecordFragment extends Fragment implements TimePickerFragment.OnFra
     RecordEntity record;
     TimeTrackerDatabaseHelper dbHelper;
 
+    public void deleteRecord(){
+        try {
+            dbHelper.<RecordDao, RecordEntity>getDao(RecordEntity.class).remove(record);
+        } catch (Exception e){
+
+        }
+    }
+
     @OnClick(R.id.startTimeButton)
     public void showStartTimePickerDialog(View v) {
         TimePickerFragment newFragment = new TimePickerFragment();
